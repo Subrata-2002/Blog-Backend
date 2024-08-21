@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/admin")
 public class AdminController {
 
     @Autowired

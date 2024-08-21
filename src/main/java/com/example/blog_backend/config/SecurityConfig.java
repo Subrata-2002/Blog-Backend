@@ -7,6 +7,7 @@ import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,12 +33,12 @@ public class SecurityConfig{
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())  // Disable CSRF protection for simplicity
                 .authorizeHttpRequests(authorize -> authorize
-                                .requestMatchers("/api/admin").permitAll()// Allow access to public endpoints
+                                .requestMatchers("/api/admin/**").permitAll()// Allow access to public endpoints
 //                                .requestMatchers("/register", "/login").permitAll()  // Allow registration and login endpoints
                                 .anyRequest().authenticated()  // Require authentication for all other endpoints
                 )
-//                .httpBasic(Customizer.withDefaults());  // Use HTTP Basic authentication
-                .addFilterBefore((Filter) jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .httpBasic(Customizer.withDefaults());  // Use HTTP Basic authentication
+//                .addFilterBefore((Filter) jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         System.out.println("SecurityFilterChain created");
         return http.build();
     }
