@@ -2,6 +2,7 @@ package com.example.blog_backend.services.Impl;
 
 import com.example.blog_backend.controller.LoginResponse;
 import com.example.blog_backend.controller.MasterResponseBody;
+import com.example.blog_backend.dto.ArticleDto;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
 import com.example.blog_backend.repository.AdminRepository;
@@ -18,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -87,36 +90,24 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
-
-    //    @Override
-//    public String createArticle (String path, MultipartFile file ) throws IOException {
-//
-//        String name = file.getOriginalFilename();
-//
-//        String filePath = path +File.separator+name;
-//
-//        File f = new File(filePath);
-//
-//        if(!f.exists()) {
-//            f.mkdir();
-//        }
-//
-//        Files.copy(file.getInputStream(),Paths.get(filePath));
-//
-//        return name;
-//    }
-
     @Override
     public MasterResponseBody<String> createArticle(Article article, MultipartFile heroImage) {
-        // Save the image to the local file system
-        String imagePath = saveImage(heroImage);
+        try {
+            String slug = generateSlug(article.getTitle());
+            article.setTitle(slug);
 
-        // Set the image path and save the article to the database
-        article.setHeroImage(imagePath.toString());
-        System.out.println("Image path"+imagePath);
-        articleRepository.save(article);
+            // Save the image to the local file system
+            String imagePath = saveImage(heroImage);
+            article.setHeroImage(imagePath);
 
-        return new MasterResponseBody<>("Article created successfully", 200);
+            // Save the article to the database
+            articleRepository.save(article);
+
+            return new MasterResponseBody<>("Article created successfully", 200);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new MasterResponseBody<>("Error creating article", 500);
+        }
     }
 
     private String saveImage(MultipartFile image) {
@@ -135,8 +126,6 @@ public class AdminServiceImpl implements AdminService {
             // Save the image to the file system
             Files.write(filePath, image.getBytes());
 
-            // Return the path relative to the image directory
-
             System.out.println("Filepath is " + filePath.toString());
             System.out.println("FileName is " + fileName);
             return filePath.toString();
@@ -145,6 +134,54 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Failed to store image", e);
         }
     }
+
+    // Method to generate slug
+    private String generateSlug(String title) {
+        // Step 1: Normalize the title (convert to lowercase and remove special characters)
+        String normalizedTitle = title.toLowerCase().replaceAll("[^a-z0-9\\s]", "").replaceAll("\\s+", "-");
+        System.out.println("normalizedTitle is " + normalizedTitle);
+        // Step 2: Generate a unique identifier using SecureRandom
+        String uniqueIdentifier = generateRandomString(12); // Adjust the length as needed
+
+        System.out.println("uniqueIdentifier is " +uniqueIdentifier);
+        // Step 3: Concatenate the normalized title with the unique identifier
+        return normalizedTitle + "-" + uniqueIdentifier;
+    }
+
+    // Method to generate a random string for uniqueness
+    private String generateRandomString(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder randomString = new StringBuilder(length);
+        System.out.println("random string is "+randomString);
+
+        for (int i = 0; i < length; i++) {
+            int randomIndex = secureRandom.nextInt(characters.length());
+            System.out.println("randomIndex is "+randomIndex);
+            randomString.append(characters.charAt(randomIndex));
+        }
+        System.out.println("random string is in next part "+randomString.toString());
+        return randomString.toString();
+
+    }
+
+
+    @Override
+    public List<Article> getAllPublicArticles() {
+        System.out.println("checking all articles");
+
+        return articleRepository.findByPublicAccessTrue();
+    }
+
+//    @Override
+//    public MasterResponseBody<List<ArticleDto>> getAllPublicArticles() {
+//        try {
+//            List<Article> publicArticles = articleRepository.findByType().// Fetch only public articles
+//            return new MasterResponseBody<>(publicArticles, 200);
+//        } catch (Exception e) {
+//            return new MasterResponseBody<>(null, 500, "Failed to fetch public articles: " + e.getMessage());
+//        }
+//    }
 }
 
 

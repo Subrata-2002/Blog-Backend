@@ -1,5 +1,6 @@
 package com.example.blog_backend.filter;
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.blog_backend.services.Impl.AdminDetailsServiceImpl;
 import com.example.blog_backend.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
@@ -7,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,14 +36,31 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtUtils.extractUsername(jwt);
+            try {
+                username = jwtUtils.extractUsername(jwt);
+            } catch (TokenExpiredException e) {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                response.setContentType("application/json");
+                System.out.println("Token Expired TokenExpiredException");
+                response.getWriter().write("{\"message\": \"Token expired!! Please Login Again\", \"status\": \"401\"}");
+                return; // Stop further processing
+            } catch (Exception e) {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                response.setContentType("application/json");
+                System.out.println("Token Expired Exception");
+                response.getWriter().write("{\"message\": \"Invalid token\", \"status\": \"401\"}");
+                return; // Stop further processing
+            }
+
+            System.out.println("Extracted username: " + username);
+
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            System.out.print("username in the JwtRequestFilter is "+username);
+            System.out.print("username in the JwtRequestFilter is " + username);
 
             UserDetails userDetails = this.adminDetailsServiceimpl.loadUserByUsername(username);
-            System.out.print("userdetails is"+userDetails);
+            System.out.print("userdetails is" + userDetails);
 
             if (jwtUtils.validateToken(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =

@@ -1,6 +1,8 @@
 package com.example.blog_backend.controller;
 
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.example.blog_backend.dto.ArticleDto;
 import com.example.blog_backend.dto.LoginDto;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
@@ -14,8 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -64,27 +71,33 @@ public class AdminController {
             @RequestParam("isPublic") boolean isPublic,
             @RequestParam("heroImage") MultipartFile heroImage) {
 
-        // Create and populate the Article object
-        Article article = new Article();
-        article.setTitle(title);
-        article.setHtmlContent(htmlContent);
-        article.setPublic(isPublic);
+            // Create the Article object
+            Article article = new Article();
+            article.setTitle(title);
+            article.setHtmlContent(htmlContent);
+            article.setPublic(isPublic);
 
-        // Validate article data before saving
-        MasterResponseBody<String> savedArticle = adminService.createArticle(article, heroImage);
+            // Call the service to save the article
+            MasterResponseBody<String> savedArticle = adminService.createArticle(article, heroImage);
 
-        // Determine the response status
-        HttpStatus status;
-        switch (savedArticle.getStatus()) {
-            case 500:
-                status = HttpStatus.NOT_IMPLEMENTED;
-                break;
-            default:
-                status = HttpStatus.OK;
-        }
+            // Determine the response status based on the service response
+            HttpStatus status;
+            switch (savedArticle.getStatus()) {
+                case 500:
+                    status = HttpStatus.NOT_IMPLEMENTED;
+                    break;
+                default:
+                    status = HttpStatus.OK;
+            }
+            // Return the response
+            return new ResponseEntity<>(savedArticle, status);
 
-        // Return the response
-        return new ResponseEntity<>(savedArticle, status);
     }
 
+
+    @GetMapping("/public")
+    public ResponseEntity<List<ArticleDto>> getAllPublicArticles() {
+        List<ArticleDto> articles = adminService.getAllPublicArticles();
+        return ResponseEntity.ok(articles);
+    }
 }
