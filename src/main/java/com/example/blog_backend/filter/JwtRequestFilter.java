@@ -29,13 +29,42 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException, ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+
+//         Skip JWT validation for public endpoint
+//        if ("/api/admin/register".equals(requestURI)) {
+//
+//            System.out.println("Public route is this");
+//            chain.doFilter(request, response);
+//            return;
+//        }
+
+        if (requestURI.startsWith("/api/admin/article/public")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username = null;
         String jwt = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
+//        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer "))
+      if(authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
+            if(requestURI.startsWith("/api/admin") && !"/api/admin/register".equals(requestURI) && !"/api/admin/public".equals(requestURI) && !"/api/admin/login".equals(requestURI) && !"/api/admin/article/public/\\d+".equals(requestURI)) {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                response.setContentType("application/json");
+                response.getWriter().write("{\"message\": \"Authorization token is required\", \"status\": \"401\"}");
+                return; // Stop further processing
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
+              jwt = authorizationHeader.substring(7);
             try {
                 username = jwtUtils.extractUsername(jwt);
             } catch (TokenExpiredException e) {
@@ -56,7 +85,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             System.out.print("username in the JwtRequestFilter is " + username);
 
             UserDetails userDetails = this.adminDetailsServiceimpl.loadUserByUsername(username);

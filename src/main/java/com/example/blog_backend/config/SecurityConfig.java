@@ -33,12 +33,13 @@ public class SecurityConfig{
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())  // Disable CSRF protection for simplicity
                 .authorizeHttpRequests(authorize -> authorize
-                                .requestMatchers("/api/admin/**").permitAll()// Allow access to public endpoints
-                                .requestMatchers("/api/admin/create").authenticated()
-                                .anyRequest().authenticated()  // Require authentication for all other endpoints
-                )
-//                .httpBasic(Customizer.withDefaults());  // Use HTTP Basic authentication
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                                 .requestMatchers("/api/admin/register","/api/admin/public","/api/admin/login").permitAll()// Allow access to public endpoint
+                                .requestMatchers("/api/admin/article/public/**").permitAll()
+                                .requestMatchers("/api/admin/article/private/**").authenticated()
+                                 .requestMatchers("/api/admin/create").authenticated()
+//                                 .requestMatchers("/api/admin/private").authenticated()
+                                   .anyRequest().authenticated()  // Require authentication for all other endpoints
+                ).addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         System.out.println("SecurityFilterChain created");
         return http.build();
     }

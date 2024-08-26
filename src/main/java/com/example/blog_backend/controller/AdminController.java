@@ -1,8 +1,6 @@
 package com.example.blog_backend.controller;
 
 
-import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.example.blog_backend.dto.ArticleDto;
 import com.example.blog_backend.dto.LoginDto;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
@@ -16,9 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,7 +34,7 @@ public class AdminController {
     @Autowired
     private JwtUtils jwtUtils;
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<MasterResponseBody<Admin>> createUser(@RequestBody Admin admin){
         // Validate user data before saving
         MasterResponseBody<Admin> savedUser = adminService.createUser(admin);
@@ -96,8 +91,30 @@ public class AdminController {
 
 
     @GetMapping("/public")
-    public ResponseEntity<List<ArticleDto>> getAllPublicArticles() {
-        List<ArticleDto> articles = adminService.getAllPublicArticles();
+    public ResponseEntity<List<Article>> getAllPublicArticles() {
+        List<Article> articles = adminService.getAllPublicArticles();
         return ResponseEntity.ok(articles);
+    }
+
+    @GetMapping("/private")
+    public ResponseEntity<List<Article>> getAllPrivateArticles() {
+        List<Article> articles = adminService.getAllPrivateArticles();
+        return ResponseEntity.ok(articles);
+    }
+
+
+    // Public endpoint to get a single article
+    @GetMapping("/article/public/{id}")
+    public ResponseEntity<Article> getPublicArticle(@PathVariable Long id) {
+        Article article = adminService.findPublicArticleById(id);
+
+        return ResponseEntity.ok(article);
+    }
+
+    // Endpoint for fetching a private article
+    @GetMapping("/article/private/{id}")
+    public ResponseEntity<Article> getPrivateArticle(@PathVariable Long id) {
+        Article article = adminService.findPrivateArticleById(id);
+        return ResponseEntity.ok(article);
     }
 }

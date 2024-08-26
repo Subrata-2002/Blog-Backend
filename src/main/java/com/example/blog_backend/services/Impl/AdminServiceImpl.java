@@ -2,7 +2,6 @@ package com.example.blog_backend.services.Impl;
 
 import com.example.blog_backend.controller.LoginResponse;
 import com.example.blog_backend.controller.MasterResponseBody;
-import com.example.blog_backend.dto.ArticleDto;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
 import com.example.blog_backend.repository.AdminRepository;
@@ -143,7 +142,7 @@ public class AdminServiceImpl implements AdminService {
         // Step 2: Generate a unique identifier using SecureRandom
         String uniqueIdentifier = generateRandomString(12); // Adjust the length as needed
 
-        System.out.println("uniqueIdentifier is " +uniqueIdentifier);
+        System.out.println("uniqueIdentifier is " + uniqueIdentifier);
         // Step 3: Concatenate the normalized title with the unique identifier
         return normalizedTitle + "-" + uniqueIdentifier;
     }
@@ -153,14 +152,14 @@ public class AdminServiceImpl implements AdminService {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder randomString = new StringBuilder(length);
-        System.out.println("random string is "+randomString);
+        System.out.println("random string is " + randomString);
 
         for (int i = 0; i < length; i++) {
             int randomIndex = secureRandom.nextInt(characters.length());
-            System.out.println("randomIndex is "+randomIndex);
+            System.out.println("randomIndex is " + randomIndex);
             randomString.append(characters.charAt(randomIndex));
         }
-        System.out.println("random string is in next part "+randomString.toString());
+        System.out.println("random string is in next part " + randomString.toString());
         return randomString.toString();
 
     }
@@ -168,20 +167,50 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<Article> getAllPublicArticles() {
-        System.out.println("checking all articles");
+        System.out.println("In public article list");
 
-        return articleRepository.findByPublicAccessTrue();
+        return articleRepository.findByIsPublicTrue();
     }
 
-//    @Override
-//    public MasterResponseBody<List<ArticleDto>> getAllPublicArticles() {
-//        try {
-//            List<Article> publicArticles = articleRepository.findByType().// Fetch only public articles
-//            return new MasterResponseBody<>(publicArticles, 200);
-//        } catch (Exception e) {
-//            return new MasterResponseBody<>(null, 500, "Failed to fetch public articles: " + e.getMessage());
-//        }
-//    }
+    @Override
+    public List<Article> getAllPrivateArticles() {
+        try {
+            System.out.println("In private article list");
+            return articleRepository.findByIsPublicFalse();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return (List<Article>) new MasterResponseBody<>("Error creating user", 500);
+        }
+
+    }
+
+    @Override
+    public Article findById(Long id) {
+        return articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
+    }
+
+    @Override
+    public Article findPublicArticleById(Long id) {
+        System.out.println("findPublicArticleById");
+        Article article = findById(id);
+
+        System.out.println("article is"+article.isPublic());
+        System.out.println("Article found"+article.toString());
+        if (!article.isPublic()) {
+            throw new RuntimeException("Article is private and cannot be accessed without authentication");
+        }
+        return article;
+    }
+
+    @Override
+    public Article findPrivateArticleById(Long id) {
+        Article article = findById(id);
+        if (article.isPublic()) {
+            throw new RuntimeException("Article is public and should be accessed via the public endpoint");
+        }
+        return article;
+    }
 }
 
 
