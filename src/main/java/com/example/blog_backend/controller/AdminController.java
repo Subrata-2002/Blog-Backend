@@ -130,12 +130,13 @@ public class AdminController {
             @RequestParam(value = "heroImage", required = false) MultipartFile heroImage,
             @RequestParam("isPublic") boolean isPublic) {
 
+        System.out.println("Now at updateArticle controller ");
         // Create an article object and set fields
         Article updatedArticle = new Article();
         updatedArticle.setTitle(title);
         updatedArticle.setHtmlContent(htmlContent);
         updatedArticle.setPublic(isPublic);
-
+        System.out.println("checking "+updatedArticle.toString());
         // Call the service to update the article with the new values
         MasterResponseBody<String> response = adminService.updateArticle(id, updatedArticle, heroImage);
 

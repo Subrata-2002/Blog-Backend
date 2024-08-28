@@ -242,8 +242,8 @@ public class AdminServiceImpl implements AdminService {
         // If heroImage is provided, handle the file upload and update
         if (heroImage != null && !heroImage.isEmpty()) {
             // Handle file upload logic and update heroImage in the article
-            Object fileUploadService = null;
-            String imageUrl = fileUploadService.
+            String imageUrl = FileUploadService.uploadFile(heroImage);
+            System.out.println("ImageUrl is "+imageUrl);
             existingArticle.setHeroImage(imageUrl);
         }
 
@@ -252,6 +252,32 @@ public class AdminServiceImpl implements AdminService {
 
         // Return a success response
         return new MasterResponseBody<>("Article updated successfully",200);
+    }
+
+    @Service
+    static
+    class FileUploadService {
+
+        private static final String uploadDirectory = "uploads/";
+
+        public static String uploadFile(MultipartFile file) {
+            try {
+                // Ensure the directory exists
+                Path uploadPath = Paths.get(uploadDirectory);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                // Generate a file name and save the file
+                String fileName = file.getOriginalFilename();
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(file.getInputStream(), filePath);
+
+                return filePath.toString(); // Return the file path
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to store file", e);
+            }
+        }
     }
 
 
