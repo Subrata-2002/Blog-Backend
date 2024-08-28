@@ -31,6 +31,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException, ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+        System.out.println("url is "+requestURI);
 
 //         Skip JWT validation for public endpoint
 //        if ("/api/admin/register".equals(requestURI)) {
@@ -39,8 +40,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 //            chain.doFilter(request, response);
 //            return;
 //        }
+        System.out.println("/api/admin/article/public".equals(requestURI));
 
-        if (requestURI.startsWith("/api/admin/article/public")) {
+        if ("/api/admin/article/public".equals(requestURI)) {
+
             chain.doFilter(request, response);
             return;
         }
@@ -52,7 +55,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
 //        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer "))
       if(authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")){
-            if(requestURI.startsWith("/api/admin") && !"/api/admin/register".equals(requestURI) && !"/api/admin/public".equals(requestURI) && !"/api/admin/login".equals(requestURI) && !"/api/admin/article/public/\\d+".equals(requestURI)) {
+            if(requestURI.startsWith("/api/admin") && !"/api/admin/register".equals(requestURI) && !"/api/admin/public".equals(requestURI) && !"/api/admin/login".equals(requestURI) && !"/api/admin/article/public".equals(requestURI)) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 response.setContentType("application/json");
                 response.getWriter().write("{\"message\": \"Authorization token is required\", \"status\": \"401\"}");

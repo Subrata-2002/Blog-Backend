@@ -6,9 +6,11 @@ import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
 import com.example.blog_backend.repository.AdminRepository;
 import com.example.blog_backend.repository.ArticleRepository;
+import com.example.blog_backend.response.ArticleResponse;
 import com.example.blog_backend.services.AdminService;
 import com.example.blog_backend.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -161,7 +163,6 @@ public class AdminServiceImpl implements AdminService {
         }
         System.out.println("random string is in next part " + randomString.toString());
         return randomString.toString();
-
     }
 
 
@@ -190,27 +191,70 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Article not found"));
     }
 
+//    @Override
+//    public Article findPublicArticleById(Long id) {
+//        System.out.println("findPublicArticleById");
+//        Article article = findById(id);
+//
+//        System.out.println("article is "+article.isPublic());
+//        System.out.println("Article found"+article.toString());
+//        if (!article.isPublic()) {
+//            return new Article("article is not public", 403);
+//        }
+//        return article;
+//    }
     @Override
-    public Article findPublicArticleById(Long id) {
+    public ArticleResponse findPublicArticleById(Long id){
         System.out.println("findPublicArticleById");
         Article article = findById(id);
 
-        System.out.println("article is"+article.isPublic());
-        System.out.println("Article found"+article.toString());
-        if (!article.isPublic()) {
-            throw new RuntimeException("Article is private and cannot be accessed without authentication");
+        System.out.println("article is "+article.isPublic());
+        System.out.println("Article found "+article.toString());
+
+        if(!article.isPublic()){
+            return new ArticleResponse("Article is private and cannot be accessed without authentication", 403);
         }
-        return article;
+        return new ArticleResponse(article,"article fetched successfully",200);
+    }
+
+
+    @Override
+    public ArticleResponse findPrivateArticleById(Long id) {
+        System.out.println("findPublicArticleById");
+        Article article = findById(id);
+        if(article.isPublic()){
+            return new ArticleResponse("Article is public and cannot be accessed without authentication", 403);
+        }
+        return new ArticleResponse(article,"article fetched successfully",200);
     }
 
     @Override
-    public Article findPrivateArticleById(Long id) {
-        Article article = findById(id);
-        if (article.isPublic()) {
-            throw new RuntimeException("Article is public and should be accessed via the public endpoint");
+    public MasterResponseBody<String> updateArticle(Long id, Article updatedArticle, MultipartFile heroImage) {
+        // Fetch the article by ID
+        Article existingArticle = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
+
+        // Update the article fields
+        existingArticle.setTitle(updatedArticle.getTitle());
+        existingArticle.setHtmlContent(updatedArticle.getHtmlContent());
+        existingArticle.setPublic(updatedArticle.isPublic());
+
+        // If heroImage is provided, handle the file upload and update
+        if (heroImage != null && !heroImage.isEmpty()) {
+            // Handle file upload logic and update heroImage in the article
+            Object fileUploadService = null;
+            String imageUrl = fileUploadService.
+            existingArticle.setHeroImage(imageUrl);
         }
-        return article;
+
+        // Save the updated article back to the database
+        articleRepository.save(existingArticle);
+
+        // Return a success response
+        return new MasterResponseBody<>("Article updated successfully",200);
     }
+
+
 }
 
 

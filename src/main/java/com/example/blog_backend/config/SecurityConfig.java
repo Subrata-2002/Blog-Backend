@@ -38,7 +38,7 @@ public class SecurityConfig{
                                 .requestMatchers("/api/admin/article/private/**").authenticated()
                                  .requestMatchers("/api/admin/create").authenticated()
 //                                 .requestMatchers("/api/admin/private").authenticated()
-                                   .anyRequest().authenticated()  // Require authentication for all other endpoints
+                                   .anyRequest().permitAll()  // Require authentication for all other endpoints
                 ).addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         System.out.println("SecurityFilterChain created");
         return http.build();

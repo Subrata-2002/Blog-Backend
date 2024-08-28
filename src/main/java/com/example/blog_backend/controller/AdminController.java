@@ -4,6 +4,7 @@ package com.example.blog_backend.controller;
 import com.example.blog_backend.dto.LoginDto;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
+import com.example.blog_backend.response.ArticleResponse;
 import com.example.blog_backend.services.AdminService;
 import com.example.blog_backend.utils.JwtUtils;
 import lombok.AllArgsConstructor;
@@ -66,26 +67,26 @@ public class AdminController {
             @RequestParam("isPublic") boolean isPublic,
             @RequestParam("heroImage") MultipartFile heroImage) {
 
-            // Create the Article object
-            Article article = new Article();
-            article.setTitle(title);
-            article.setHtmlContent(htmlContent);
-            article.setPublic(isPublic);
+        // Create the Article object
+        Article article = new Article();
+        article.setTitle(title);
+        article.setHtmlContent(htmlContent);
+        article.setPublic(isPublic);
 
-            // Call the service to save the article
-            MasterResponseBody<String> savedArticle = adminService.createArticle(article, heroImage);
+        // Call the service to save the article
+        MasterResponseBody<String> savedArticle = adminService.createArticle(article, heroImage);
 
-            // Determine the response status based on the service response
-            HttpStatus status;
-            switch (savedArticle.getStatus()) {
-                case 500:
-                    status = HttpStatus.NOT_IMPLEMENTED;
-                    break;
-                default:
-                    status = HttpStatus.OK;
-            }
-            // Return the response
-            return new ResponseEntity<>(savedArticle, status);
+        // Determine the response status based on the service response
+        HttpStatus status;
+        switch (savedArticle.getStatus()) {
+            case 500:
+                status = HttpStatus.NOT_IMPLEMENTED;
+                break;
+            default:
+                status = HttpStatus.OK;
+        }
+        // Return the response
+        return new ResponseEntity<>(savedArticle, status);
 
     }
 
@@ -104,17 +105,42 @@ public class AdminController {
 
 
     // Public endpoint to get a single article
-    @GetMapping("/article/public/{id}")
-    public ResponseEntity<Article> getPublicArticle(@PathVariable Long id) {
-        Article article = adminService.findPublicArticleById(id);
+    @GetMapping("/article/public")
+    public ResponseEntity<MasterResponseBody<String>> getPublicArticle(@RequestParam Long id) {
+        System.out.println("At the public article");
+        MasterResponseBody<String>  article = adminService.findPublicArticleById(id);
 
-        return ResponseEntity.ok(article);
+        return new ResponseEntity<>(article, HttpStatusCode.valueOf(article.getStatus()));
     }
 
     // Endpoint for fetching a private article
-    @GetMapping("/article/private/{id}")
-    public ResponseEntity<Article> getPrivateArticle(@PathVariable Long id) {
-        Article article = adminService.findPrivateArticleById(id);
-        return ResponseEntity.ok(article);
+    @GetMapping("/article/private")
+    public ResponseEntity<MasterResponseBody<String>> getPrivateArticle(@RequestParam Long id) {
+        System.out.println("At the private article");
+        MasterResponseBody<String>  article = adminService.findPrivateArticleById(id);
+
+        return new ResponseEntity<>(article, HttpStatusCode.valueOf(article.getStatus()));
     }
+
+    @PutMapping("/article/update/{id}")
+    public ResponseEntity<MasterResponseBody<String>> updateArticle(
+            @PathVariable Long id,
+            @RequestParam("title") String title,
+            @RequestParam("htmlContent") String htmlContent,
+            @RequestParam(value = "heroImage", required = false) MultipartFile heroImage,
+            @RequestParam("isPublic") boolean isPublic) {
+
+        // Create an article object and set fields
+        Article updatedArticle = new Article();
+        updatedArticle.setTitle(title);
+        updatedArticle.setHtmlContent(htmlContent);
+        updatedArticle.setPublic(isPublic);
+
+        // Call the service to update the article with the new values
+        MasterResponseBody<String> response = adminService.updateArticle(id, updatedArticle, heroImage);
+
+        // Return the response
+        return new ResponseEntity<>(response, HttpStatusCode.valueOf(response.getStatus()));
+    }
+
 }

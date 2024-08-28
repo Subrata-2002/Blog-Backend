@@ -27,11 +27,11 @@ public class Article{
     @NotEmpty(message = "Content is required.")
     private String htmlContent;
 
-
     @Column(name = "image", nullable = false )
     @NotEmpty(message = "Hero-Image is required.")
     private String heroImage;
 
     @Column(name = "accessType" , nullable = false)
     private boolean isPublic = false; // Default to private (false)
+
 }
