@@ -144,4 +144,18 @@ public class AdminController {
         return new ResponseEntity<>(response, HttpStatusCode.valueOf(response.getStatus()));
     }
 
+
+    @DeleteMapping("/article/delete/{id}")
+    public ResponseEntity<MasterResponseBody<String>> deleteArticle(@PathVariable Long id) {
+        MasterResponseBody<String> response = adminService.deleteArticle(id);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    }
+
+    @PostMapping("article/like")
+    public ResponseEntity<MasterResponseBody<String>> likeArticle(@RequestParam Long articleId, @RequestParam Long userId, @RequestParam Integer likeValue) {
+        System.out.println("You are at likeController");
+        MasterResponseBody<String> response = adminService.likeArticle(articleId, userId, likeValue);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+    }
+
 }

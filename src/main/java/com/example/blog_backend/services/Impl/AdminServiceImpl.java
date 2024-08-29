@@ -4,8 +4,10 @@ import com.example.blog_backend.controller.LoginResponse;
 import com.example.blog_backend.controller.MasterResponseBody;
 import com.example.blog_backend.entity.Admin;
 import com.example.blog_backend.entity.Article;
+import com.example.blog_backend.entity.Like;
 import com.example.blog_backend.repository.AdminRepository;
 import com.example.blog_backend.repository.ArticleRepository;
+import com.example.blog_backend.repository.LikeRepository;
 import com.example.blog_backend.response.ArticleResponse;
 import com.example.blog_backend.services.AdminService;
 import com.example.blog_backend.utils.JwtUtils;
@@ -36,6 +38,8 @@ public class AdminServiceImpl implements AdminService {
     @Autowired
     private ArticleRepository articleRepository;
 
+    @Autowired
+    private LikeRepository likeRepository;
 
     @Override
     public MasterResponseBody<Admin> createUser(Admin admin) {
@@ -187,34 +191,26 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Article findById(Long id) {
-        return articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Article not found"));
+        System.out.println("id is"+articleRepository.findById(id).orElse(null));
+        return articleRepository.findById(id).orElse(null);
+
     }
 
-//    @Override
-//    public Article findPublicArticleById(Long id) {
-//        System.out.println("findPublicArticleById");
-//        Article article = findById(id);
-//
-//        System.out.println("article is "+article.isPublic());
-//        System.out.println("Article found"+article.toString());
-//        if (!article.isPublic()) {
-//            return new Article("article is not public", 403);
-//        }
-//        return article;
-//    }
     @Override
-    public ArticleResponse findPublicArticleById(Long id){
+    public ArticleResponse findPublicArticleById(Long id) {
         System.out.println("findPublicArticleById");
         Article article = findById(id);
 
-        System.out.println("article is "+article.isPublic());
-        System.out.println("Article found "+article.toString());
+        if(article == null){
+            return new ArticleResponse("Article not found", 404);
+        }
+        System.out.println("article is " + article.isPublic());
+        System.out.println("Article found " + article.toString());
 
-        if(!article.isPublic()){
+        if (!article.isPublic()) {
             return new ArticleResponse("Article is private and cannot be accessed without authentication", 403);
         }
-        return new ArticleResponse(article,"article fetched successfully",200);
+        return new ArticleResponse(article, "article fetched successfully", 200);
     }
 
 
@@ -222,17 +218,23 @@ public class AdminServiceImpl implements AdminService {
     public ArticleResponse findPrivateArticleById(Long id) {
         System.out.println("findPublicArticleById");
         Article article = findById(id);
-        if(article.isPublic()){
+        if(article == null){
+            return new ArticleResponse("Article not found", 404);
+        }
+        if (article.isPublic()) {
             return new ArticleResponse("Article is public and cannot be accessed without authentication", 403);
         }
-        return new ArticleResponse(article,"article fetched successfully",200);
+        return new ArticleResponse(article, "article fetched successfully", 200);
     }
 
     @Override
     public MasterResponseBody<String> updateArticle(Long id, Article updatedArticle, MultipartFile heroImage) {
         // Fetch the article by ID
-        Article existingArticle = articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Article not found"));
+        Article existingArticle = findById(id);
+
+        if(existingArticle == null){
+            return new MasterResponseBody<>("Article not found", 404);
+        }
 
         // Update the article fields
         existingArticle.setTitle(updatedArticle.getTitle());
@@ -243,23 +245,20 @@ public class AdminServiceImpl implements AdminService {
         if (heroImage != null && !heroImage.isEmpty()) {
             // Handle file upload logic and update heroImage in the article
             String imageUrl = FileUploadService.uploadFile(heroImage);
-            System.out.println("ImageUrl is "+imageUrl);
+            System.out.println("ImageUrl is " + imageUrl);
             existingArticle.setHeroImage(imageUrl);
         }
-
         // Save the updated article back to the database
         articleRepository.save(existingArticle);
 
         // Return a success response
-        return new MasterResponseBody<>("Article updated successfully",200);
+        return new MasterResponseBody<>("Article updated successfully", 200);
     }
 
     @Service
     static
     class FileUploadService {
-
         private static final String uploadDirectory = "uploads/";
-
         public static String uploadFile(MultipartFile file) {
             try {
                 // Ensure the directory exists
@@ -278,6 +277,64 @@ public class AdminServiceImpl implements AdminService {
                 throw new RuntimeException("Failed to store file", e);
             }
         }
+    }
+
+
+    @Override
+    public MasterResponseBody<String> deleteArticle(Long id){
+        try {
+            articleRepository.deleteById(id);
+            return new MasterResponseBody<>("Article deleted successfully", 200);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new MasterResponseBody<>("Error deleting article", 500);
+        }
+    }
+
+    @Override
+    public MasterResponseBody<String> likeArticle(Long articleId, Long userId, Integer likeValue) {
+        // Find the article by ID
+        Article article = findById(articleId);
+        Admin admin = new Admin();
+        if (article == null) {
+            return new MasterResponseBody<>("Article not found", 404);
+        }
+//        // Check if the admin exists
+        System.out.println("User ID: " + userId);
+        Optional<Admin> adminOptional = adminRepository.findById(userId);
+        System.out.println("Admin found: " + adminOptional.isPresent());
+        if (adminOptional.isEmpty()) {
+            return new MasterResponseBody<>("Admin not found", 404);
+        }
+
+        // Check if a like entry already exists for this user and article
+        Optional<Like> existingLikeOptional = likeRepository.findByArticleIdAndUserId(articleId, userId);
+
+        if (existingLikeOptional.isPresent()) {
+            // If a like entry exists, get the existing like
+            Like existingLike = existingLikeOptional.get();
+
+            // Check if the likeValue is already set to 1 for this user
+            if (existingLike.getLikeValue() == 1) {
+                // If the user already liked the article, reset likeValue to 0 (toggle the like)
+                existingLike.setLikeValue(0);
+            } else {
+                // Otherwise, increment likeValue to 1
+                existingLike.setLikeValue(1);
+            }
+            // Update the like entry
+            likeRepository.save(existingLike);
+        } else {
+            // Create a new like entry if none exists
+            Like newLike = new Like();
+
+            newLike.setArticleId(articleId);
+            newLike.setLikeValue(likeValue);  // Set the initial like or dislike value
+            newLike.setUserId(userId);
+            likeRepository.save(newLike);
+        }
+
+        return new MasterResponseBody<>("Article like updated successfully", 200);
     }
 
 

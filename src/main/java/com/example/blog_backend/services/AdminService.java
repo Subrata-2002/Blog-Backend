@@ -24,4 +24,7 @@ public interface AdminService {
 
     MasterResponseBody<String> updateArticle(Long id, Article updatedArticle, MultipartFile heroImage);
 
+    MasterResponseBody<String> deleteArticle(Long id);
+
+    MasterResponseBody<String> likeArticle(Long articleId, Long userId, Integer likeValue);
 }

@@ -11,4 +11,5 @@ public interface ArticleRepository extends JpaRepository<Article, Long>{
     List<Article> findByIsPublicTrue();
     List<Article> findByIsPublicFalse();
     Optional<Article> findById(Long id);
+
 }
