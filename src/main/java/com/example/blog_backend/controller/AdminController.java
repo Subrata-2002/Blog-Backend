@@ -87,9 +87,7 @@ public class AdminController {
         }
         // Return the response
         return new ResponseEntity<>(savedArticle, status);
-
     }
-
 
     @GetMapping("/public")
     public ResponseEntity<List<Article>> getAllPublicArticles() {
@@ -102,7 +100,6 @@ public class AdminController {
         List<Article> articles = adminService.getAllPrivateArticles();
         return ResponseEntity.ok(articles);
     }
-
 
     // Public endpoint to get a single article
     @GetMapping("/article/public")

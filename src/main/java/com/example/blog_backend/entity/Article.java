@@ -19,7 +19,8 @@ public class Article{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "title", nullable = false, unique = true)
+    @Lob
+    @Column(name = "title", nullable = false, unique = true,columnDefinition = "TEXT")
     @NotEmpty(message = "Title is required.")
     private String title;
 

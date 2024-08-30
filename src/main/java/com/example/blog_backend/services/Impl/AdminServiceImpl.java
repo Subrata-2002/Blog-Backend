@@ -235,9 +235,10 @@ public class AdminServiceImpl implements AdminService {
         if(existingArticle == null){
             return new MasterResponseBody<>("Article not found", 404);
         }
-
+        String newSlug = generateSlug(updatedArticle.getTitle());
+        existingArticle.setTitle(newSlug);
         // Update the article fields
-        existingArticle.setTitle(updatedArticle.getTitle());
+
         existingArticle.setHtmlContent(updatedArticle.getHtmlContent());
         existingArticle.setPublic(updatedArticle.isPublic());
 
